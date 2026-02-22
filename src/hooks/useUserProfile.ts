@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, getCurrentUserId, invokeFunction } from '@/lib/supabase/client';
+import { supabase, getCurrentUserId, invokeFunction, isDemoMode } from '@/lib/supabase/client';
 
 export interface UserProfile {
   id: string;
@@ -23,14 +23,39 @@ export interface UserProfile {
   onboarding_complete: boolean;
 }
 
+const demoProfile: UserProfile = {
+  id: 'demo-user-id',
+  full_name: 'Rameshta Vishwakarma',
+  age: 24,
+  biological_sex: 'female',
+  height_cm: 163,
+  weight_kg: 58,
+  primary_goal: 'Muscle Gain',
+  health_conditions: ['IBS / Gut Issues', 'Anxiety / Depression'],
+  dietary_pattern: 'Vegetarian on weekdays',
+  food_allergies: null,
+  occupation: 'MBA student at SPJIMR',
+  typical_sleep_time: '00:00',
+  typical_wake_time: '07:00',
+  typical_workout_time: '18:00',
+  workout_type: 'Calisthenics and Cardio',
+  workout_duration_mins: 60,
+  ai_context_field: 'I am an MBA student at SPJIMR Mumbai eating college mess food on weekdays. I travel home to Pimpri on weekends. I keep a fast every Ekadashi. I work out 5 days a week doing calisthenics and cardio.',
+  hydration_target_ml: 2500,
+  onboarding_complete: true,
+};
+
+const demoAiSummary = '• 24-year-old female MBA student at SPJIMR\n• Goal: Weight maintenance + muscle gain\n• Conditions: IBS, Anxiety\n• Schedule: Classes 9–5, gym 6–7 PM, sleep ~midnight\n• Diet: Vegetarian on weekdays\n• Supplements: Vitamin D3, Ashwagandha 300mg\n• Eats mostly hostel mess food during weekdays';
+
 export function useUserProfile() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [aiSummary, setAiSummary] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<UserProfile | null>(isDemoMode ? demoProfile : null);
+  const [aiSummary, setAiSummary] = useState<string | null>(isDemoMode ? demoAiSummary : null);
+  const [loading, setLoading] = useState(isDemoMode ? false : true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchProfile = useCallback(async () => {
+    if (isDemoMode) return;
     try {
       setLoading(true);
       const userId = await getCurrentUserId();
@@ -43,7 +68,6 @@ export function useUserProfile() {
         .single();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
-        // PGRST116 = no rows returned (profile not created yet)
         throw fetchError;
       }
 
@@ -60,6 +84,10 @@ export function useUserProfile() {
   }, [fetchProfile]);
 
   const updateProfile = useCallback(async (updates: Partial<UserProfile>) => {
+    if (isDemoMode) {
+      setProfile(prev => prev ? { ...prev, ...updates } : null);
+      return { success: true };
+    }
     try {
       setSaving(true);
       setError(null);
@@ -92,6 +120,7 @@ export function useUserProfile() {
   }, [updateProfile]);
 
   const fetchAiSummary = useCallback(async () => {
+    if (isDemoMode) return demoAiSummary;
     try {
       const { data } = await invokeFunction<Record<string, never>, { summary: string }>('user-summary', {});
       if (data) {
