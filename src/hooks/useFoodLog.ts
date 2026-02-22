@@ -23,6 +23,15 @@ interface MealIngredient {
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  iron_mg?: number;
+  calcium_mg?: number;
+  magnesium_mg?: number;
+  potassium_mg?: number;
+  sodium_mg?: number;
+  vitamin_d_mcg?: number;
+  zinc_mg?: number;
+  folate_mcg?: number;
+  vitamin_b12_mcg?: number;
   confidence_source: string;
   confidence_score: number;
 }
@@ -130,13 +139,23 @@ export function useFoodLog(date?: string) {
     }
   }, [fetchMeals]);
 
-  // Computed daily totals
+  // Computed daily totals including micronutrients
   const dailyTotals = {
     calories: meals.reduce((sum, m) => sum + (m.total_calories || 0), 0),
     protein: meals.reduce((sum, m) => sum + (m.total_protein_g || 0), 0),
     carbs: meals.reduce((sum, m) => sum + (m.total_carbs_g || 0), 0),
     fat: meals.reduce((sum, m) => sum + (m.total_fat_g || 0), 0),
     fiber: meals.reduce((sum, m) => sum + (m.total_fiber_g || 0), 0),
+    // Aggregate micronutrients from ingredients across all meals
+    iron_mg: meals.flatMap(m => m.meal_ingredients).reduce((sum, ing) => sum + (ing.iron_mg || 0), 0),
+    calcium_mg: meals.flatMap(m => m.meal_ingredients).reduce((sum, ing) => sum + (ing.calcium_mg || 0), 0),
+    magnesium_mg: meals.flatMap(m => m.meal_ingredients).reduce((sum, ing) => sum + (ing.magnesium_mg || 0), 0),
+    potassium_mg: meals.flatMap(m => m.meal_ingredients).reduce((sum, ing) => sum + (ing.potassium_mg || 0), 0),
+    sodium_mg: meals.flatMap(m => m.meal_ingredients).reduce((sum, ing) => sum + (ing.sodium_mg || 0), 0),
+    vitamin_d_mcg: meals.flatMap(m => m.meal_ingredients).reduce((sum, ing) => sum + (ing.vitamin_d_mcg || 0), 0),
+    zinc_mg: meals.flatMap(m => m.meal_ingredients).reduce((sum, ing) => sum + (ing.zinc_mg || 0), 0),
+    folate_mcg: meals.flatMap(m => m.meal_ingredients).reduce((sum, ing) => sum + (ing.folate_mcg || 0), 0),
+    vitamin_b12_mcg: meals.flatMap(m => m.meal_ingredients).reduce((sum, ing) => sum + (ing.vitamin_b12_mcg || 0), 0),
   };
 
   // Group meals by type

@@ -51,7 +51,7 @@ const Dashboard = () => {
 
   // Generate blood sugar simulation from actual meal times
   const bloodSugarData = useMemo(() => {
-    const hours = ['6AM','7AM','8AM','9AM','10AM','11AM','12PM','1PM','2PM','3PM','4PM','5PM','6PM','7PM','8PM','9PM','10PM'];
+    const hours = ['6AM', '7AM', '8AM', '9AM', '10AM', '11AM', '12PM', '1PM', '2PM', '3PM', '4PM', '5PM', '6PM', '7PM', '8PM', '9PM', '10PM'];
     const baseline = 20;
     const mealHours = todayMeals.map(m => {
       const d = new Date(m.logged_at);
@@ -128,16 +128,32 @@ const Dashboard = () => {
     { name: "Fat", value: fatG, color: "hsl(214, 56%, 57%)" },
   ];
 
+  // Micronutrient RDAs (general adult male/female average for visualization)
+  const rda = {
+    iron: 18,        // mg
+    calcium: 1000,   // mg
+    magnesium: 400,  // mg
+    potassium: 3400, // mg
+    sodium: 2300,    // mg (upper limit typically, but using as target here for simplicity)
+    vitaminD: 15,    // mcg
+    zinc: 11,        // mg
+    folate: 400,     // mcg
+    vitaminB12: 2.4, // mcg
+  };
+
+  const calcPct = (val?: number, target: number = 1) => Math.min(100, Math.round(((val || 0) / target) * 100));
+  const getDStatus = (pct: number) => pct >= 80 ? "✅" : pct >= 50 ? "🟡" : "🔴";
+
   const microNutrients = [
-    { name: "Iron", pct: 65, status: "⚠️" },
-    { name: "Calcium", pct: 82, status: "✅" },
-    { name: "Magnesium", pct: 48, status: "🔴" },
-    { name: "Potassium", pct: 79, status: "🟡" },
-    { name: "Sodium", pct: 91, status: "✅" },
-    { name: "B12", pct: 53, status: "🔴" },
-    { name: "Vitamin D", pct: 22, status: "🔴" },
-    { name: "Zinc", pct: 61, status: "🟡" },
-    { name: "Folate", pct: 71, status: "🟡" },
+    { name: "Iron", pct: calcPct(todayMeals.reduce((acc, m) => acc + (m.meal_ingredients?.reduce((s, i) => s + (i.iron_mg || 0), 0) || 0), 0), rda.iron), get status() { return getDStatus(this.pct); } },
+    { name: "Calcium", pct: calcPct(todayMeals.reduce((acc, m) => acc + (m.meal_ingredients?.reduce((s, i) => s + (i.calcium_mg || 0), 0) || 0), 0), rda.calcium), get status() { return getDStatus(this.pct); } },
+    { name: "Magnesium", pct: calcPct(todayMeals.reduce((acc, m) => acc + (m.meal_ingredients?.reduce((s, i) => s + (i.magnesium_mg || 0), 0) || 0), 0), rda.magnesium), get status() { return getDStatus(this.pct); } },
+    { name: "Potassium", pct: calcPct(todayMeals.reduce((acc, m) => acc + (m.meal_ingredients?.reduce((s, i) => s + (i.potassium_mg || 0), 0) || 0), 0), rda.potassium), get status() { return getDStatus(this.pct); } },
+    { name: "Sodium", pct: calcPct(todayMeals.reduce((acc, m) => acc + (m.meal_ingredients?.reduce((s, i) => s + (i.sodium_mg || 0), 0) || 0), 0), rda.sodium), get status() { return getDStatus(this.pct); } },
+    { name: "B12", pct: calcPct(todayMeals.reduce((acc, m) => acc + (m.meal_ingredients?.reduce((s, i) => s + (i.vitamin_b12_mcg || 0), 0) || 0), 0), rda.vitaminB12), get status() { return getDStatus(this.pct); } },
+    { name: "Vitamin D", pct: calcPct(todayMeals.reduce((acc, m) => acc + (m.meal_ingredients?.reduce((s, i) => s + (i.vitamin_d_mcg || 0), 0) || 0), 0), rda.vitaminD), get status() { return getDStatus(this.pct); } },
+    { name: "Zinc", pct: calcPct(todayMeals.reduce((acc, m) => acc + (m.meal_ingredients?.reduce((s, i) => s + (i.zinc_mg || 0), 0) || 0), 0), rda.zinc), get status() { return getDStatus(this.pct); } },
+    { name: "Folate", pct: calcPct(todayMeals.reduce((acc, m) => acc + (m.meal_ingredients?.reduce((s, i) => s + (i.folate_mcg || 0), 0) || 0), 0), rda.folate), get status() { return getDStatus(this.pct); } },
     { name: "Water", pct: waterPct, status: waterPct >= 80 ? "✅" : waterPct >= 50 ? "🟡" : "🔴" },
   ];
 
@@ -167,7 +183,7 @@ const Dashboard = () => {
           <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
             <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="6" />
             <circle cx="50" cy="50" r="42" fill="none" stroke="white" strokeWidth="6"
-              strokeDasharray={`${(wellnessOverall/100)*263.9} 263.9`} strokeLinecap="round" />
+              strokeDasharray={`${(wellnessOverall / 100) * 263.9} 263.9`} strokeLinecap="round" />
           </svg>
           <span className="absolute inset-0 flex items-center justify-center text-xl md:text-2xl font-mono font-bold text-white">{wellnessOverall}</span>
         </div>
@@ -211,7 +227,7 @@ const Dashboard = () => {
             <svg viewBox="0 0 160 160" className="w-full h-full -rotate-90">
               <circle cx="80" cy="80" r="68" fill="none" stroke="hsl(var(--border))" strokeWidth="8" />
               <circle cx="80" cy="80" r="68" fill="none" stroke="hsl(var(--secondary))" strokeWidth="8"
-                strokeDasharray={`${(Math.min(totalCalories/calorieTarget, 1))*427.3} 427.3`} strokeLinecap="round" />
+                strokeDasharray={`${(Math.min(totalCalories / calorieTarget, 1)) * 427.3} 427.3`} strokeLinecap="round" />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-2xl font-mono font-bold text-foreground">{totalCalories.toLocaleString()}</span>
@@ -451,9 +467,8 @@ const Dashboard = () => {
                     if (ok) toast({ title: "Gut score logged — we'll track symptom patterns 📊" });
                     else toast({ title: "Failed to log — try again", variant: "destructive" });
                   }}
-                  className={`text-2xl transition-all rounded-full p-1 ${
-                    gutScore === i + 1 ? "scale-125 ring-2 ring-success bg-success/10" : gutScore !== null && gutScore !== i + 1 ? "opacity-50" : "hover:scale-110"
-                  }`}
+                  className={`text-2xl transition-all rounded-full p-1 ${gutScore === i + 1 ? "scale-125 ring-2 ring-success bg-success/10" : gutScore !== null && gutScore !== i + 1 ? "opacity-50" : "hover:scale-110"
+                    }`}
                 >
                   {emoji}
                 </button>
@@ -478,7 +493,7 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-4">
             <div className="bg-muted rounded-xl p-3 text-center">
               <p className="text-[10px] text-muted-foreground font-sans mb-1">Today's Mood</p>
-              <p className="text-lg">{selectedMood ? ["😣","😟","😐","😊","😄"][selectedMood-1] : "😊"} <span className="text-sm font-mono font-semibold">{selectedMood || 4}/5</span></p>
+              <p className="text-lg">{selectedMood ? ["😣", "😟", "😐", "😊", "😄"][selectedMood - 1] : "😊"} <span className="text-sm font-mono font-semibold">{selectedMood || 4}/5</span></p>
             </div>
             <div className="bg-muted rounded-xl p-3 text-center">
               <p className="text-[10px] text-muted-foreground font-sans mb-1">7-day avg mood</p>
@@ -510,9 +525,8 @@ const Dashboard = () => {
                     if (ok) toast({ title: "Mood logged — we'll track patterns over time 📊" });
                     else toast({ title: "Failed to log — try again", variant: "destructive" });
                   }}
-                  className={`text-2xl transition-all rounded-full p-1 ${
-                    selectedMood === i + 1 ? "scale-130 ring-2 ring-[#4A90D9] bg-[#4A90D9]/10" : selectedMood !== null && selectedMood !== i + 1 ? "opacity-50" : "hover:scale-110"
-                  }`}
+                  className={`text-2xl transition-all rounded-full p-1 ${selectedMood === i + 1 ? "scale-130 ring-2 ring-[#4A90D9] bg-[#4A90D9]/10" : selectedMood !== null && selectedMood !== i + 1 ? "opacity-50" : "hover:scale-110"
+                    }`}
                 >
                   {emoji}
                 </button>
@@ -589,11 +603,10 @@ const Dashboard = () => {
                   <button
                     key={opt.value}
                     onClick={() => setReminderRepeat(opt.value)}
-                    className={`flex-1 rounded-xl border px-3 py-2 text-xs font-sans transition-colors ${
-                      reminderRepeat === opt.value
+                    className={`flex-1 rounded-xl border px-3 py-2 text-xs font-sans transition-colors ${reminderRepeat === opt.value
                         ? "border-primary bg-primary/10 text-primary font-medium"
                         : "border-border text-muted-foreground hover:border-primary/40"
-                    }`}
+                      }`}
                   >
                     {opt.label}
                   </button>
